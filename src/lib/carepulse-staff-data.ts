@@ -108,6 +108,8 @@ export type ClinicWorkspace = {
   consultations: ConsultationRecord[];
   notifications: NotificationRecord[];
   settings: ClinicSettingsRecord[];
+  /** Record sets the database currently refuses to share with staff. */
+  unavailable: string[];
 };
 
 export function getMembershipClinicIds(memberships: ClinicMembership[]) {
@@ -120,6 +122,15 @@ function failRead() {
 
 function readRows<T>(result: { data: T[] | null; error: unknown }): T[] {
   if (result.error) throw failRead();
+  return result.data ?? [];
+}
+
+/** Reads a record set that should not take the whole workspace down when the database refuses it. */
+export function readOptionalRows<T>(name: string, result: { data: T[] | null; error: unknown }, unavailable: string[]): T[] {
+  if (result.error) {
+    unavailable.push(name);
+    return [];
+  }
   return result.data ?? [];
 }
 
@@ -150,6 +161,7 @@ export async function readClinicWorkspace(userId: string): Promise<ClinicWorkspa
       consultations: [],
       notifications: [],
       settings: [],
+      unavailable: [],
     };
   }
 
@@ -174,6 +186,7 @@ export async function readClinicWorkspace(userId: string): Promise<ClinicWorkspa
       consultations: [],
       notifications: [],
       settings: [],
+      unavailable: [],
     };
   }
 
@@ -191,6 +204,7 @@ export async function readClinicWorkspace(userId: string): Promise<ClinicWorkspa
     supabase.from("clinic_settings").select("clinic_id, settings, updated_at").in("clinic_id", authorizedClinicIds),
   ]);
 
+  const unavailable: string[] = [];
   return {
     userId,
     email: authData.user.email ?? "",
@@ -198,12 +212,13 @@ export async function readClinicWorkspace(userId: string): Promise<ClinicWorkspa
     clinics,
     patients: readRows(patientsResult),
     appointments: readRows(appointmentsResult),
-    doctors: readRows(doctorsResult),
-    schedules: readRows(schedulesResult),
+    doctors: readOptionalRows("doctors", doctorsResult, unavailable),
+    schedules: readOptionalRows("doctor schedules", schedulesResult, unavailable),
     triage: readRows(triageResult),
     consultations: readRows(consultationsResult),
     notifications: readRows(notificationsResult),
     settings: readRows(settingsResult),
+    unavailable,
   };
 }
 
