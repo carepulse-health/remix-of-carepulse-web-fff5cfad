@@ -612,6 +612,7 @@ export type Database = {
           priority_level: string
           recommended_action: string | null
           review_status: string | null
+          reviewed_at: string | null
           reviewed_by: string | null
           symptoms: string | null
         }
@@ -625,6 +626,7 @@ export type Database = {
           priority_level: string
           recommended_action?: string | null
           review_status?: string | null
+          reviewed_at?: string | null
           reviewed_by?: string | null
           symptoms?: string | null
         }
@@ -638,6 +640,7 @@ export type Database = {
           priority_level?: string
           recommended_action?: string | null
           review_status?: string | null
+          reviewed_at?: string | null
           reviewed_by?: string | null
           symptoms?: string | null
         }
