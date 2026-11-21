@@ -40,3 +40,7 @@ use the editor.
 ## Staff data access
 
 - Keep staff reads and permitted writes in the browser Supabase client with RLS, resolve clinic membership before loading records, and filter every clinic dataset by verified membership IDs; never use the service-role client for ordinary staff data.
+
+## QR pass check-in
+
+- Verify scanned appointment passes and perform QR check-ins only in `requireSupabaseAuth` server functions that use the caller's RLS client and the existing `verify_appointment_pass` database function; never return the pass token to the browser, and keep the confirmed-to-checked_in update conditional so a pass checks in once.

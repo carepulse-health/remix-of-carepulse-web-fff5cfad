@@ -4,7 +4,7 @@ import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   Activity, AlertCircle, ArrowRight, Bell, CalendarDays, Check, CheckCircle2,
   ChevronDown, Clock3, ClipboardList, HeartPulse, LayoutDashboard, LogOut,
-  Menu, Plus, Search, Settings2, ShieldCheck, Stethoscope, Users, UserRound,
+  Menu, Plus, ScanLine, Search, Settings2, ShieldCheck, Stethoscope, Users, UserRound,
   X,
 } from "lucide-react";
 
@@ -24,6 +24,8 @@ import {
   type PatientRecord, type TriageRecord,
 } from "@/lib/carepulse-staff-data";
 import { supabase } from "@/integrations/supabase/client";
+import { PassScannerDialog } from "@/components/carepulse/pass-scanner-dialog";
+import { canScanPasses } from "@/lib/carepulse-pass";
 import {
   initialAppointments, initialDoctors, initialPatients, initialTriage,
 } from "@/lib/carepulse-data";
@@ -77,12 +79,14 @@ function CarePulseDashboard() {
   const [consultationModal, setConsultationModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentRecord | null>(null);
   const [busy, setBusy] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   const demoMode = workspace.memberships.length === 0;
   const clinic = workspace.clinics.find((item) => item.id === selectedClinicId) ?? workspace.clinics[0] ?? null;
   const clinicId = clinic?.id ?? "";
+  const canScan = !demoMode && canScanPasses(workspace.memberships.filter((item) => item.clinic_id === clinicId).map((item) => item.role));
   const patients = demoMode ? [] : workspace.patients.filter((item) => item.clinic_id === clinicId);
   const appointments = demoMode ? [] : workspace.appointments.filter((item) => item.clinic_id === clinicId);
   const doctors = demoMode ? [] : workspace.doctors.filter((item) => item.clinic_id === clinicId);
@@ -282,7 +286,7 @@ function CarePulseDashboard() {
           {notice && <div role="status" className="mb-4 border-l-4 border-l-status-positive bg-status-positive/10 px-4 py-3 text-sm text-status-positive">{notice}</div>}
           <div className="mb-7 flex flex-col justify-between gap-4 sm:mb-8 sm:flex-row sm:items-end">
             <div><p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-care-blue">{formatToday()}</p><h1 className="font-display text-[26px] font-bold leading-tight sm:text-[30px]">{section === "Overview" ? "Clinic overview" : section}</h1><p className="mt-1.5 text-sm text-muted-foreground">{pageDescriptions[section]}</p></div>
-            {!demoMode && clinic && <div className="flex flex-wrap gap-2"><Button variant="outline" className="h-10 gap-2" onClick={() => { setErrorMessage(""); setAppointmentModal(true); }}><CalendarDays className="size-4" />Schedule appointment</Button>{section === "Consultations" && <Button className="h-10 gap-2" onClick={() => { setSelectedAppointment(null); setConsultationModal(true); }}><Plus className="size-4" />Record consultation</Button>}</div>}
+            {!demoMode && clinic && <div className="flex flex-wrap gap-2 sm:justify-end"><Button className="h-10 gap-2" disabled={!canScan} onClick={() => { setErrorMessage(""); setNotice(""); setScannerOpen(true); }}><ScanLine className="size-4" />Scan Patient QR</Button><Button variant="outline" className="h-10 gap-2" onClick={() => { setErrorMessage(""); setAppointmentModal(true); }}><CalendarDays className="size-4" />Schedule appointment</Button>{section === "Consultations" && <Button className="h-10 gap-2" onClick={() => { setSelectedAppointment(null); setConsultationModal(true); }}><Plus className="size-4" />Record consultation</Button>}{!canScan && <p className="w-full text-[11px] text-muted-foreground sm:text-right">QR check-in is limited to clinic admins and reception staff.</p>}</div>}
           </div>
 
           {demoMode ? <DemoContent section={section} query={query} onSection={setSection} /> : clinic ? <LiveContent
@@ -310,6 +314,7 @@ function CarePulseDashboard() {
         </main>
       </div>
 
+      {!demoMode && clinic && <PassScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} clinicId={clinic.id} clinicName={clinic.name} onCheckedIn={(pass) => { setNotice(`${pass.patientName} was checked in from their QR pass.`); void reloadWorkspace(); }} />}
       <AppointmentDialog open={appointmentModal} onOpenChange={setAppointmentModal} patients={patients} doctors={doctors} busy={busy} onSubmit={saveAppointment} />
       <ConsultationDialog open={consultationModal} onOpenChange={setConsultationModal} patients={patients} doctors={doctors} appointments={appointments} selectedAppointment={selectedAppointment} busy={busy} onSubmit={saveConsultation} />
     </div>
