@@ -263,7 +263,6 @@ async function saveDoctor(values: DoctorFormValues) {
     setBusy(false);
   }
 }
-}
   async function updateAppointment(appointmentId: string, status: string) {
     setBusy(true);
     setErrorMessage("");
