@@ -333,3 +333,42 @@ export async function updateClinicPatient(input: { clinicId: string; patientId: 
     .maybeSingle();
   if (error || !data) throw new Error("This patient could not be updated. Only clinic admins and reception staff can edit patients.");
 }
+export async function createClinicDoctor(input: {
+  clinicId: string;
+  values: {
+    full_name: string;
+    specialization: string | null;
+    availability_status: string;
+  };
+}) {
+  const { error } = await supabase.from("doctors").insert({
+    ...input.values,
+    clinic_id: input.clinicId,
+  });
+
+  if (error) {
+    throw new Error("This doctor could not be added. Check clinic permissions.");
+  }
+}
+
+export async function updateClinicDoctor(input: {
+  clinicId: string;
+  doctorId: string;
+  values: {
+    full_name: string;
+    specialization: string | null;
+    availability_status: string;
+  };
+}) {
+  const { data, error } = await supabase
+    .from("doctors")
+    .update(input.values)
+    .eq("id", input.doctorId)
+    .eq("clinic_id", input.clinicId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("This doctor could not be updated. Check clinic permissions.");
+  }
+}
