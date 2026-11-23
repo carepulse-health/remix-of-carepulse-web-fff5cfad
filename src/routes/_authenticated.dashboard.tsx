@@ -23,8 +23,31 @@ import {
   createClinicAppointment,
  createClinicPatient,
 updateClinicPatient,
-createClinicDoctor,
-updateClinicDoctor,
+  createClinicDoctor,
+  updateClinicDoctor,
+  createClinicSchedule,
+  updateClinicSchedule,
+  markClinicNotificationRead,
+  reviewClinicTriage,
+  type AppointmentRecord,
+  type ClinicWorkspace,
+  type ConsultationRecord,
+  type DoctorRecord,
+  type NotificationRecord,
+  type PatientRecord,
+  type TriageRecord,
+} from "@/lib/carepulse-staff-data";
+
+import { PatientDialog } from "@/components/carepulse/patient-dialog";
+import { DoctorDialog, type DoctorFormValues } from "@/components/carepulse/doctor-dialog";
+import { canManagePatients } from "@/lib/carepulse-patients";
+import type { PatientFormValues } from "@/lib/carepulse-patients";
+import { supabase } from "@/integrations/supabase/client";
+import { PassScannerDialog } from "@/components/carepulse/pass-scanner-dialog";
+import { canScanPasses } from "@/lib/carepulse-pass";
+import {
+  initialAppointments, initialDoctors, initialPatients, initialTriage,
+} from "@/lib/carepulse-data";
   markClinicNotificationRead,
   reviewClinicTriage,
   type AppointmentRecord,
