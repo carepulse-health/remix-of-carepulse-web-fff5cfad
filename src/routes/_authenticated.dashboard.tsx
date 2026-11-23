@@ -17,12 +17,26 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  addClinicConsultation, changeClinicAppointmentStatus, clinicWorkspaceQueryOptions,
-  createClinicAppointment, markClinicNotificationRead, readClinicWorkspace,
-  reviewClinicTriage, type AppointmentRecord, type ClinicWorkspace,
-  type ConsultationRecord, type DoctorRecord, type NotificationRecord,
-  type PatientRecord, type TriageRecord,
+  addClinicConsultation,
+  changeClinicAppointmentStatus,
+  clinicWorkspaceQueryOptions,
+  createClinicAppointment,
+  createClinicPatient,
+  updateClinicPatient,
+  markClinicNotificationRead,
+  reviewClinicTriage,
+  type AppointmentRecord,
+  type ClinicWorkspace,
+  type ConsultationRecord,
+  type DoctorRecord,
+  type NotificationRecord,
+  type PatientRecord,
+  type TriageRecord,
 } from "@/lib/carepulse-staff-data";
+
+import { PatientDialog } from "@/components/carepulse/patient-dialog";
+import { canManagePatients } from "@/lib/carepulse-patients";
+import type { PatientFormValues } from "@/lib/carepulse-patients";
 import { supabase } from "@/integrations/supabase/client";
 import { PassScannerDialog } from "@/components/carepulse/pass-scanner-dialog";
 import { canScanPasses } from "@/lib/carepulse-pass";
@@ -75,9 +89,8 @@ function CarePulseDashboard() {
   const [selectedClinicId, setSelectedClinicId] = useState(workspace.clinics[0]?.id ?? "");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [appointmentModal, setAppointmentModal] = useState(false);
-  const [consultationModal, setConsultationModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentRecord | null>(null);
+const [patientModal, setPatientModal] = useState(false);
+const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
   const [busy, setBusy] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [notice, setNotice] = useState("");
