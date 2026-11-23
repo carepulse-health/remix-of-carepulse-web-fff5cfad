@@ -16,13 +16,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+
 import {
   addClinicConsultation,
   changeClinicAppointmentStatus,
   clinicWorkspaceQueryOptions,
   createClinicAppointment,
- createClinicPatient,
-updateClinicPatient,
+  createClinicPatient,
+  updateClinicPatient,
   createClinicDoctor,
   updateClinicDoctor,
   createClinicSchedule,
@@ -40,6 +41,7 @@ updateClinicPatient,
 
 import { PatientDialog } from "@/components/carepulse/patient-dialog";
 import { DoctorDialog, type DoctorFormValues } from "@/components/carepulse/doctor-dialog";
+import { ScheduleDialog, type ScheduleFormValues } from "@/components/carepulse/schedule-dialog";
 import { canManagePatients } from "@/lib/carepulse-patients";
 import type { PatientFormValues } from "@/lib/carepulse-patients";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,28 +50,6 @@ import { canScanPasses } from "@/lib/carepulse-pass";
 import {
   initialAppointments, initialDoctors, initialPatients, initialTriage,
 } from "@/lib/carepulse-data";
-  markClinicNotificationRead,
-  reviewClinicTriage,
-  type AppointmentRecord,
-  type ClinicWorkspace,
-  type ConsultationRecord,
-  type DoctorRecord,
-  type NotificationRecord,
-  type PatientRecord,
-  type TriageRecord,
-} from "@/lib/carepulse-staff-data";
-
-import { PatientDialog } from "@/components/carepulse/patient-dialog";
-import { DoctorDialog, type DoctorFormValues } from "@/components/carepulse/doctor-dialog";
-import { canManagePatients } from "@/lib/carepulse-patients";
-import type { PatientFormValues } from "@/lib/carepulse-patients";
-import { supabase } from "@/integrations/supabase/client";
-import { PassScannerDialog } from "@/components/carepulse/pass-scanner-dialog";
-import { canScanPasses } from "@/lib/carepulse-pass";
-import {
-  initialAppointments, initialDoctors, initialPatients, initialTriage,
-} from "@/lib/carepulse-data";
-
 type Section = "Overview" | "Appointments" | "Patients" | "Triage Queue" | "Doctors" | "Consultations" | "Notifications" | "Settings";
 type DemoAppointment = (typeof initialAppointments)[number];
 type DemoPatient = (typeof initialPatients)[number];
