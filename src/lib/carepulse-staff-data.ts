@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+import type { PatientFormValues } from "@/lib/carepulse-patients";
 
 export type ClinicMembership = { clinic_id: string; role: string };
 
@@ -21,6 +22,9 @@ export type PatientRecord = {
   gender: string | null;
   phone: string | null;
   email: string | null;
+  address: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
 };
 
 export type AppointmentRecord = {
@@ -191,7 +195,7 @@ export async function readClinicWorkspace(userId: string): Promise<ClinicWorkspa
   }
 
   const [patientsResult, appointmentsResult, doctorsResult, schedulesResult, triageResult, consultationsResult, notificationsResult, settingsResult] = await Promise.all([
-    supabase.from("patients").select("id, clinic_id, full_name, date_of_birth, gender, phone, email").in("clinic_id", authorizedClinicIds),
+    supabase.from("patients").select("id, clinic_id, full_name, date_of_birth, gender, phone, email, address, emergency_contact_name, emergency_contact_phone").in("clinic_id", authorizedClinicIds),
     supabase.from("appointments").select("id, clinic_id, patient_id, doctor_id, appointment_date, appointment_time, reason, status").in("clinic_id", authorizedClinicIds),
     supabase.from("doctors").select("id, clinic_id, full_name, specialization, availability_status").in("clinic_id", authorizedClinicIds),
     supabase.from("doctor_schedules").select("id, clinic_id, doctor_id, day_of_week, start_time, end_time, is_available").in("clinic_id", authorizedClinicIds),
@@ -311,4 +315,21 @@ export async function markClinicNotificationRead(input: {
     .select("id")
     .maybeSingle();
   if (error || !data) throw new Error("This alert could not be marked read. Check clinic access and try again.");
+}
+/** Registers a front-desk patient. The record is never linked to a patient app account here. */
+export async function createClinicPatient(input: { clinicId: string; values: PatientFormValues }) {
+  const { error } = await supabase.from("patients").insert({ ...input.values, clinic_id: input.clinicId, auth_user_id: null });
+  if (error) throw new Error("This patient could not be registered. Only clinic admins and reception staff can add patients.");
+}
+
+/** Updates contact details only; clinic, account link and record IDs stay unchanged. */
+export async function updateClinicPatient(input: { clinicId: string; patientId: string; values: PatientFormValues }) {
+  const { data, error } = await supabase
+    .from("patients")
+    .update(input.values)
+    .eq("id", input.patientId)
+    .eq("clinic_id", input.clinicId)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) throw new Error("This patient could not be updated. Only clinic admins and reception staff can edit patients.");
 }
