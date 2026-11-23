@@ -407,6 +407,9 @@ async function saveDoctor(values: DoctorFormValues) {
             userId={user.id}
             busy={busy}
    canManagePatients={canManagePatientRecords}
+ canManageDoctors={canManageDoctorRecords}
+onAddDoctor={() => { setSelectedDoctor(null); setErrorMessage(""); setDoctorModal(true); }}
+onEditDoctor={(doctor) => { setSelectedDoctor(doctor); setErrorMessage(""); setDoctorModal(true); }}                                                                                                         
 onAddPatient={() => { setSelectedPatient(null); setErrorMessage(""); setPatientModal(true); }}
 onEditPatient={(patient) => { setSelectedPatient(patient); setErrorMessage(""); setPatientModal(true); }}                                                                                    
             onAppointmentStatus={updateAppointment}
@@ -432,6 +435,17 @@ onEditPatient={(patient) => { setSelectedPatient(patient); setErrorMessage(""); 
   patient={selectedPatient}
   onSave={savePatient}
 />
+      <DoctorDialog
+  open={doctorModal}
+  onOpenChange={(open) => {
+    setDoctorModal(open);
+    if (!open) setSelectedDoctor(null);
+  }}
+  busy={busy}
+  error={errorMessage}
+  doctor={selectedDoctor}
+  onSave={saveDoctor}
+/>
     </div>
   );
 }
@@ -452,6 +466,14 @@ function LiveContent(props: {
   unavailable: string[];
   userId: string;
   busy: boolean;
+
+  canManagePatients: boolean;
+  onAddPatient: () => void;
+  onEditPatient: (patient: PatientRecord) => void;
+
+  canManageDoctors: boolean;
+  onAddDoctor: () => void;
+  onEditDoctor: (doctor: DoctorRecord) => void;
   onAppointmentStatus: (id: string, status: string) => void;
   onReviewTriage: (item: TriageRecord) => void;
   onConsultation: () => void;
@@ -469,7 +491,16 @@ function LiveContent(props: {
   />
 );
   if (props.section === "Triage Queue") return <TriageContent triage={props.triage} patients={props.allPatients} busy={props.busy} onReview={props.onReviewTriage} />;
-  if (props.section === "Doctors") return <DoctorsContent doctors={props.doctors} schedules={props.schedules} unavailable={props.unavailable} />;
+ if (props.section === "Doctors") return (
+  <DoctorsContent
+    doctors={props.doctors}
+    schedules={props.schedules}
+    unavailable={props.unavailable}
+    canManage={props.canManageDoctors}
+    onAdd={props.onAddDoctor}
+    onEdit={props.onEditDoctor}
+  />
+);
   if (props.section === "Consultations") return <ConsultationsContent consultations={props.consultations} appointments={props.allAppointments} patients={props.allPatients} doctors={props.doctors} onCreate={props.onConsultation} />;
   if (props.section === "Notifications") return <NotificationsContent notifications={props.notifications} busy={props.busy} onRead={props.onMarkRead} />;
   return <SettingsContent clinic={props.clinic} settings={props.settings} />;
@@ -599,10 +630,118 @@ function TriageItem({ item, patients, busy, onReview }: { item: TriageRecord; pa
   const reviewed = item.review_status === "reviewed";
   return <div className={`flex flex-col gap-3 border border-border p-4 sm:flex-row sm:items-start ${priority === "Emergency" ? "border-l-4 border-l-priority-emergency" : ""}`}><PersonAvatar name={patientName(patients, item.patient_id)} /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold">{patientName(patients, item.patient_id)}</span><PriorityBadge value={priority} /></div><p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.ai_summary || item.symptoms || "No screening notes provided."}</p>{item.recommended_action && <p className="mt-2 text-xs"><span className="font-semibold">Suggested action:</span> {item.recommended_action}</p>}<p className="mt-2 text-[10px] text-muted-foreground">{item.created_at ? formatDateTime(item.created_at) : "Date not available"}</p></div>{reviewed ? <span className="flex items-center gap-1 text-xs font-medium text-status-positive"><Check className="size-4" />Reviewed</span> : <Button variant="outline" size="sm" disabled={busy} onClick={onReview}>Mark reviewed</Button>}</div>;
 }
+function DoctorsContent({
+  doctors,
+  schedules,
+  unavailable,
+  canManage,
+  onAdd,
+  onEdit,
+}: {
+  doctors: DoctorRecord[];
+  schedules: ClinicWorkspace["schedules"];
+  unavailable: string[];
+  canManage: boolean;
+  onAdd: () => void;
+  onEdit: (doctor: DoctorRecord) => void;
+}) {
+  const blocked = unavailable.filter(
+    (name) => name === "doctors" || name === "doctor schedules"
+  );
 
-function DoctorsContent({ doctors, schedules, unavailable }: { doctors: DoctorRecord[]; schedules: ClinicWorkspace["schedules"]; unavailable: string[] }) {
-  const blocked = unavailable.filter((name) => name === "doctors" || name === "doctor schedules");
-  return <>{blocked.length > 0 && <div role="alert" className="mb-4 border-l-4 border-l-destructive bg-destructive/10 px-4 py-3 text-xs"><p className="font-semibold">Doctor information is not available yet</p><p className="mt-1 text-muted-foreground">The clinic database does not currently allow staff to view {blocked.join(" or ")}. Ask your clinic administrator to enable this access.</p></div>}<div className="mb-4 flex items-start gap-3 border-l-4 border-l-status-warning bg-status-warning/10 px-4 py-3 text-xs"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-status-warning" /><div><p className="font-semibold">Profile and schedule editing is unavailable</p><p className="mt-1 text-muted-foreground">The current database rules allow clinic staff to view doctor profiles and schedules, but not to add or edit them.</p></div></div><div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{doctors.map((doctor) => <article key={doctor.id} className="border border-border bg-card p-5"><div className="flex items-center gap-3"><PersonAvatar name={doctor.full_name} /><div className="min-w-0"><h2 className="truncate text-sm font-semibold">{doctor.full_name}</h2><p className="mt-1 truncate text-xs text-muted-foreground">{doctor.specialization || "Specialty not listed"}</p></div></div><div className="mt-5 border-t border-border pt-4"><div className="flex justify-between text-xs"><span className="text-muted-foreground">Availability</span><StatusBadge value={doctor.availability_status || "Not listed"} /></div><div className="mt-4"><p className="mb-2 text-xs font-semibold">Weekly schedule</p>{schedules.filter((item) => item.doctor_id === doctor.id).map((item) => <div key={item.id} className="flex justify-between border-t border-border py-2 text-[11px]"><span>{item.day_of_week}</span><span className="text-muted-foreground">{item.is_available ? `${formatTime(item.start_time)} – ${formatTime(item.end_time)}` : "Unavailable"}</span></div>)}{!schedules.some((item) => item.doctor_id === doctor.id) && <p className="text-xs text-muted-foreground">No schedule is listed.</p>}</div></div></article>)}</div>{doctors.length === 0 && <EmptyMessage>No doctor profiles are available in this clinic.</EmptyMessage>}</>;
+  return (
+    <>
+      {blocked.length > 0 && (
+        <div role="alert" className="mb-4 border-l-4 border-l-destructive bg-destructive/10 px-4 py-3 text-xs">
+          <p className="font-semibold">Doctor information is not available yet</p>
+          <p className="mt-1 text-muted-foreground">
+            The clinic database does not currently allow staff to view {blocked.join(" or ")}.
+            Ask your clinic administrator to enable this access.
+          </p>
+        </div>
+      )}
+
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold">Doctor directory</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Manage doctor profiles for your clinic.
+          </p>
+        </div>
+
+        {canManage && (
+          <Button onClick={onAdd} size="sm">
+            <Plus className="mr-2 size-4" />
+            Add doctor
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {doctors.map((doctor) => (
+          <article key={doctor.id} className="border border-border bg-card p-5">
+            <div className="flex items-center gap-3">
+              <PersonAvatar name={doctor.full_name} />
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-semibold">{doctor.full_name}</h2>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {doctor.specialization || "Specialty not listed"}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 border-t border-border pt-4">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Availability</span>
+                <StatusBadge value={doctor.availability_status || "Not listed"} />
+              </div>
+
+              {canManage && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={() => onEdit(doctor)}
+                >
+                  Edit doctor
+                </Button>
+              )}
+
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold">Weekly schedule</p>
+
+                {schedules
+                  .filter((item) => item.doctor_id === doctor.id)
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex justify-between border-t border-border py-2 text-[11px]"
+                    >
+                      <span>{item.day_of_week}</span>
+                      <span className="text-muted-foreground">
+                        {item.is_available
+                          ? `${formatTime(item.start_time)} – ${formatTime(item.end_time)}`
+                          : "Unavailable"}
+                      </span>
+                    </div>
+                  ))}
+
+                {!schedules.some((item) => item.doctor_id === doctor.id) && (
+                  <p className="text-xs text-muted-foreground">
+                    No schedule is listed.
+                  </p>
+                )}
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {doctors.length === 0 && (
+        <EmptyMessage>No doctor profiles are available in this clinic.</EmptyMessage>
+      )}
+    </>
+  );
 }
 
 function ConsultationsContent({ consultations, appointments, patients, doctors, onCreate }: { consultations: ConsultationRecord[]; appointments: AppointmentRecord[]; patients: PatientRecord[]; doctors: DoctorRecord[]; onCreate: () => void }) {
