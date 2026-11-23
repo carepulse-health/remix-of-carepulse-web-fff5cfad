@@ -739,7 +739,10 @@ function DoctorsContent({
   return (
     <>
       {blocked.length > 0 && (
-        <div role="alert" className="mb-4 border-l-4 border-l-destructive bg-destructive/10 px-4 py-3 text-xs">
+        <div
+          role="alert"
+          className="mb-4 border-l-4 border-l-destructive bg-destructive/10 px-4 py-3 text-xs"
+        >
           <p className="font-semibold">Doctor information is not available yet</p>
           <p className="mt-1 text-muted-foreground">
             The clinic database does not currently allow staff to view {blocked.join(" or ")}.
@@ -770,7 +773,9 @@ function DoctorsContent({
             <div className="flex items-center gap-3">
               <PersonAvatar name={doctor.full_name} />
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold">{doctor.full_name}</h2>
+                <h2 className="truncate text-sm font-semibold">
+                  {doctor.full_name}
+                </h2>
                 <p className="mt-1 truncate text-xs text-muted-foreground">
                   {doctor.specialization || "Specialty not listed"}
                 </p>
@@ -794,56 +799,62 @@ function DoctorsContent({
                 </Button>
               )}
 
-              <div className="mt-4"><div className="mt-4">
-  <div className="mb-2 flex items-center justify-between">
-    <p className="text-xs font-semibold">Weekly schedule</p>
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold">Weekly schedule</p>
 
-    {canManage && (
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => onAddSchedule(doctor)}
-      >
-        Add schedule
-      </Button>
-    )}
-  </div>
+                  {canManage && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onAddSchedule(doctor)}
+                    >
+                      Add schedule
+                    </Button>
+                  )}
+                </div>
 
-  {schedules
-    .filter((item) => item.doctor_id === doctor.id)
-    .map((item) => (
-      <div
-        key={item.id}
-        className="flex items-center justify-between gap-2 border-t border-border py-2 text-[11px]"
-      >
-        <div>
-          <p>{item.day_of_week}</p>
-          <p className="text-muted-foreground">
-            {item.is_available
-              ? `${formatTime(item.start_time)} – ${formatTime(item.end_time)}`
-              : "Unavailable"}
-          </p>
-        </div>
+                {schedules
+                  .filter((item) => item.doctor_id === doctor.id)
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-2 border-t border-border py-2 text-[11px]"
+                    >
+                      <div>
+                        <p>{item.day_of_week}</p>
+                        <p className="text-muted-foreground">
+                          {item.is_available
+                            ? `${formatTime(item.start_time)} – ${formatTime(item.end_time)}`
+                            : "Unavailable"}
+                        </p>
+                      </div>
 
-        {canManage && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onEditSchedule(doctor, item)}
-          >
-            Edit
-          </Button>
-        )}
+                      {canManage && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onEditSchedule(doctor, item)}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+
+                {!schedules.some((item) => item.doctor_id === doctor.id) && (
+                  <p className="text-xs text-muted-foreground">
+                    No schedule is listed.
+                  </p>
+                )}
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
-    ))}
-
-  {!schedules.some((item) => item.doctor_id === doctor.id) && (
-    <p className="text-xs text-muted-foreground">
-      No schedule is listed.
-    </p>
-  )}
-</div>
-
+    </>
+  );
+}
 function ConsultationsContent({ consultations, appointments, patients, doctors, onCreate }: { consultations: ConsultationRecord[]; appointments: AppointmentRecord[]; patients: PatientRecord[]; doctors: DoctorRecord[]; onCreate: () => void }) {
   return <article className="border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><h2 className="text-sm font-bold">Consultation records</h2><p className="mt-1 text-xs text-muted-foreground">Existing notes and follow-up plans visible to this clinic.</p></div><Button onClick={onCreate} className="gap-2"><Plus className="size-4" />Record consultation</Button></div><ConsultationList consultations={consultations} patients={patients} doctors={doctors} appointments={appointments} /><div className="border-t border-border bg-muted/30 px-5 py-3 text-xs text-muted-foreground">New consultation notes are saved only if the current clinic permissions allow them.</div></article>;
 }
