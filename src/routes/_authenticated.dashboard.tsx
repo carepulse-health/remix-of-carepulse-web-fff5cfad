@@ -89,6 +89,9 @@ function CarePulseDashboard() {
   const [selectedClinicId, setSelectedClinicId] = useState(workspace.clinics[0]?.id ?? "");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [appointmentModal, setAppointmentModal] = useState(false);
+const [consultationModal, setConsultationModal] = useState(false);
+const [selectedAppointment, setSelectedAppointment] = useState<AppointmentRecord | null>(null);
 const [patientModal, setPatientModal] = useState(false);
 const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
   const [busy, setBusy] = useState(false);
