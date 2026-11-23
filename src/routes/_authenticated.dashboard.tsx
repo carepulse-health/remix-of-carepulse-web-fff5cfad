@@ -35,8 +35,9 @@ import {
   type ConsultationRecord,
   type DoctorRecord,
   type NotificationRecord,
-  type PatientRecord,
-  type TriageRecord,
+type PatientRecord,
+type ScheduleRecord,
+type TriageRecord,
 } from "@/lib/carepulse-staff-data";
 
 import { PatientDialog } from "@/components/carepulse/patient-dialog";
@@ -103,6 +104,8 @@ const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(nul
 
 const [doctorModal, setDoctorModal] = useState(false);
 const [selectedDoctor, setSelectedDoctor] = useState<DoctorRecord | null>(null);
+  const [scheduleModal, setScheduleModal] = useState(false);
+const [selectedSchedule, setSelectedSchedule] = useState<ScheduleRecord | null>(null);
   const [busy, setBusy] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [notice, setNotice] = useState("");
@@ -266,6 +269,50 @@ async function saveDoctor(values: DoctorFormValues) {
     setBusy(false);
   }
 }
+  async function saveSchedule(values: ScheduleFormValues) {
+  if (!clinicId || !canManageDoctorRecords || !selectedDoctor) {
+    setErrorMessage("You do not have permission to manage doctor schedules.");
+    return;
+  }
+
+  if (values.end_time <= values.start_time) {
+    setErrorMessage("End time must be later than start time.");
+    return;
+  }
+
+  setBusy(true);
+  setErrorMessage("");
+
+  try {
+    if (selectedSchedule) {
+      await updateClinicSchedule({
+        clinicId,
+        scheduleId: selectedSchedule.id,
+        values,
+      });
+      setNotice("Doctor schedule updated.");
+    } else {
+      await createClinicSchedule({
+        clinicId,
+        doctorId: selectedDoctor.id,
+        values,
+      });
+      setNotice("Doctor schedule added.");
+    }
+
+    setScheduleModal(false);
+    setSelectedSchedule(null);
+    await reloadWorkspace();
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "The doctor schedule could not be saved."
+    );
+  } finally {
+    setBusy(false);
+  }
+}
   async function updateAppointment(appointmentId: string, status: string) {
     setBusy(true);
     setErrorMessage("");
@@ -414,7 +461,19 @@ async function saveDoctor(values: DoctorFormValues) {
    canManagePatients={canManagePatientRecords}
  canManageDoctors={canManageDoctorRecords}
 onAddDoctor={() => { setSelectedDoctor(null); setErrorMessage(""); setDoctorModal(true); }}
-onEditDoctor={(doctor) => { setSelectedDoctor(doctor); setErrorMessage(""); setDoctorModal(true); }}                                                                                                         
+onEditDoctor={(doctor) => { setSelectedDoctor(doctor); setErrorMessage(""); setDoctorModal(true); }}
+onAddSchedule={(doctor) => {
+  setSelectedDoctor(doctor);
+  setSelectedSchedule(null);
+  setErrorMessage("");
+  setScheduleModal(true);
+}}
+onEditSchedule={(doctor, schedule) => {
+  setSelectedDoctor(doctor);
+  setSelectedSchedule(schedule);
+  setErrorMessage("");
+  setScheduleModal(true);
+}}                                                                            
 onAddPatient={() => { setSelectedPatient(null); setErrorMessage(""); setPatientModal(true); }}
 onEditPatient={(patient) => { setSelectedPatient(patient); setErrorMessage(""); setPatientModal(true); }}                                                                                    
             onAppointmentStatus={updateAppointment}
@@ -451,6 +510,21 @@ onEditPatient={(patient) => { setSelectedPatient(patient); setErrorMessage(""); 
   doctor={selectedDoctor}
   onSave={saveDoctor}
 />
+      <ScheduleDialog
+  open={scheduleModal}
+  onOpenChange={(open) => {
+    setScheduleModal(open);
+    if (!open) {
+      setSelectedSchedule(null);
+      setSelectedDoctor(null);
+    }
+  }}
+  busy={busy}
+  error={errorMessage}
+  doctor={selectedDoctor}
+  schedule={selectedSchedule}
+  onSave={saveSchedule}
+/>
     </div>
   );
 }
@@ -476,9 +550,11 @@ function LiveContent(props: {
   onAddPatient: () => void;
   onEditPatient: (patient: PatientRecord) => void;
 
-  canManageDoctors: boolean;
-  onAddDoctor: () => void;
-  onEditDoctor: (doctor: DoctorRecord) => void;
+ canManageDoctors: boolean;
+onAddDoctor: () => void;
+onEditDoctor: (doctor: DoctorRecord) => void;
+onAddSchedule: (doctor: DoctorRecord) => void;
+onEditSchedule: (doctor: DoctorRecord, schedule: ScheduleRecord) => void;
   onAppointmentStatus: (id: string, status: string) => void;
   onReviewTriage: (item: TriageRecord) => void;
   onConsultation: () => void;
@@ -497,14 +573,16 @@ function LiveContent(props: {
 );
   if (props.section === "Triage Queue") return <TriageContent triage={props.triage} patients={props.allPatients} busy={props.busy} onReview={props.onReviewTriage} />;
  if (props.section === "Doctors") return (
-  <DoctorsContent
-    doctors={props.doctors}
-    schedules={props.schedules}
-    unavailable={props.unavailable}
-    canManage={props.canManageDoctors}
-    onAdd={props.onAddDoctor}
-    onEdit={props.onEditDoctor}
-  />
+ <DoctorsContent
+  doctors={props.doctors}
+  schedules={props.schedules}
+  unavailable={props.unavailable}
+  canManage={props.canManageDoctors}
+  onAdd={props.onAddDoctor}
+  onEdit={props.onEditDoctor}
+  onAddSchedule={props.onAddSchedule}
+  onEditSchedule={props.onEditSchedule}
+/>
 );
   if (props.section === "Consultations") return <ConsultationsContent consultations={props.consultations} appointments={props.allAppointments} patients={props.allPatients} doctors={props.doctors} onCreate={props.onConsultation} />;
   if (props.section === "Notifications") return <NotificationsContent notifications={props.notifications} busy={props.busy} onRead={props.onMarkRead} />;
@@ -642,6 +720,8 @@ function DoctorsContent({
   canManage,
   onAdd,
   onEdit,
+  onAddSchedule,
+  onEditSchedule,
 }: {
   doctors: DoctorRecord[];
   schedules: ClinicWorkspace["schedules"];
@@ -649,6 +729,8 @@ function DoctorsContent({
   canManage: boolean;
   onAdd: () => void;
   onEdit: (doctor: DoctorRecord) => void;
+  onAddSchedule: (doctor: DoctorRecord) => void;
+  onEditSchedule: (doctor: DoctorRecord, schedule: ScheduleRecord) => void;
 }) {
   const blocked = unavailable.filter(
     (name) => name === "doctors" || name === "doctor schedules"
@@ -712,42 +794,55 @@ function DoctorsContent({
                 </Button>
               )}
 
-              <div className="mt-4">
-                <p className="mb-2 text-xs font-semibold">Weekly schedule</p>
+              <div className="mt-4"><div className="mt-4">
+  <div className="mb-2 flex items-center justify-between">
+    <p className="text-xs font-semibold">Weekly schedule</p>
 
-                {schedules
-                  .filter((item) => item.doctor_id === doctor.id)
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex justify-between border-t border-border py-2 text-[11px]"
-                    >
-                      <span>{item.day_of_week}</span>
-                      <span className="text-muted-foreground">
-                        {item.is_available
-                          ? `${formatTime(item.start_time)} – ${formatTime(item.end_time)}`
-                          : "Unavailable"}
-                      </span>
-                    </div>
-                  ))}
+    {canManage && (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => onAddSchedule(doctor)}
+      >
+        Add schedule
+      </Button>
+    )}
+  </div>
 
-                {!schedules.some((item) => item.doctor_id === doctor.id) && (
-                  <p className="text-xs text-muted-foreground">
-                    No schedule is listed.
-                  </p>
-                )}
-              </div>
-            </div>
-          </article>
-        ))}
+  {schedules
+    .filter((item) => item.doctor_id === doctor.id)
+    .map((item) => (
+      <div
+        key={item.id}
+        className="flex items-center justify-between gap-2 border-t border-border py-2 text-[11px]"
+      >
+        <div>
+          <p>{item.day_of_week}</p>
+          <p className="text-muted-foreground">
+            {item.is_available
+              ? `${formatTime(item.start_time)} – ${formatTime(item.end_time)}`
+              : "Unavailable"}
+          </p>
+        </div>
+
+        {canManage && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onEditSchedule(doctor, item)}
+          >
+            Edit
+          </Button>
+        )}
       </div>
+    ))}
 
-      {doctors.length === 0 && (
-        <EmptyMessage>No doctor profiles are available in this clinic.</EmptyMessage>
-      )}
-    </>
-  );
-}
+  {!schedules.some((item) => item.doctor_id === doctor.id) && (
+    <p className="text-xs text-muted-foreground">
+      No schedule is listed.
+    </p>
+  )}
+</div>
 
 function ConsultationsContent({ consultations, appointments, patients, doctors, onCreate }: { consultations: ConsultationRecord[]; appointments: AppointmentRecord[]; patients: PatientRecord[]; doctors: DoctorRecord[]; onCreate: () => void }) {
   return <article className="border border-border bg-card"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><h2 className="text-sm font-bold">Consultation records</h2><p className="mt-1 text-xs text-muted-foreground">Existing notes and follow-up plans visible to this clinic.</p></div><Button onClick={onCreate} className="gap-2"><Plus className="size-4" />Record consultation</Button></div><ConsultationList consultations={consultations} patients={patients} doctors={doctors} appointments={appointments} /><div className="border-t border-border bg-muted/30 px-5 py-3 text-xs text-muted-foreground">New consultation notes are saved only if the current clinic permissions allow them.</div></article>;
