@@ -100,6 +100,11 @@ const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(nul
   const clinic = workspace.clinics.find((item) => item.id === selectedClinicId) ?? workspace.clinics[0] ?? null;
   const clinicId = clinic?.id ?? "";
   const canScan = !demoMode && canScanPasses(workspace.memberships.filter((item) => item.clinic_id === clinicId).map((item) => item.role));
+  const canManagePatientRecords = !demoMode && canManagePatients(
+  workspace.memberships
+    .filter((item) => item.clinic_id === clinicId)
+    .map((item) => item.role)
+);
   const patients = demoMode ? [] : workspace.patients.filter((item) => item.clinic_id === clinicId);
   const appointments = demoMode ? [] : workspace.appointments.filter((item) => item.clinic_id === clinicId);
   const doctors = demoMode ? [] : workspace.doctors.filter((item) => item.clinic_id === clinicId);
