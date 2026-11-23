@@ -441,8 +441,92 @@ function AppointmentTable({ appointments, patients, doctors, busy, onStatus }: {
   return <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-muted/50"><tr className="text-[10px] font-semibold uppercase text-muted-foreground"><th className="px-5 py-3">Patient</th><th className="px-3 py-3">Date & time</th><th className="px-3 py-3">Doctor</th><th className="px-3 py-3">Reason</th><th className="px-3 py-3">Status</th><th className="px-5 py-3 text-right">Action</th></tr></thead><tbody>{appointments.map((item) => { const status = normalizeStatus(item.status); return <tr key={item.id} className="border-t border-border text-xs"><td className="px-5 py-3 font-medium">{patientName(patients, item.patient_id)}</td><td className="px-3 py-3"><span className="block">{formatDate(item.appointment_date)}</span><span className="mt-1 block text-[10px] text-muted-foreground">{formatTime(item.appointment_time)}</span></td><td className="px-3 py-3 text-muted-foreground">{doctorName(doctors, item.doctor_id)}</td><td className="max-w-48 truncate px-3 py-3 text-muted-foreground">{item.reason || "—"}</td><td className="px-3 py-3"><StatusBadge value={status} /></td><td className="px-5 py-3 text-right">{status === "Pending" ? <Button variant="outline" size="sm" disabled={busy} onClick={() => onStatus(item.id, "confirmed")}>Confirm</Button> : status === "Confirmed" ? <Button variant="outline" size="sm" disabled={busy} onClick={() => onStatus(item.id, "checked_in")}>Check in</Button> : <span className="text-[10px] text-muted-foreground">—</span>}</td></tr>; })}</tbody></table>{appointments.length === 0 && <EmptyMessage>No appointments are available in this clinic.</EmptyMessage>}</div>;
 }
 
-function PatientsContent({ patients }: { patients: PatientRecord[] }) {
-  return <article className="overflow-hidden border border-border bg-card"><div className="border-b border-border px-5 py-4"><h2 className="text-sm font-bold">Patient directory</h2><p className="mt-1 text-xs text-muted-foreground">Only records visible to your clinic are shown.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left"><thead className="bg-muted/50"><tr className="text-[10px] font-semibold uppercase text-muted-foreground"><th className="px-5 py-3">Patient</th><th className="px-3 py-3">Date of birth</th><th className="px-3 py-3">Gender</th><th className="px-3 py-3">Phone</th><th className="px-5 py-3">Email</th></tr></thead><tbody>{patients.map((patient) => <tr key={patient.id} className="border-t border-border text-xs"><td className="px-5 py-3"><span className="flex items-center gap-2"><PersonAvatar name={patient.full_name} />{patient.full_name}</span></td><td className="px-3 py-3 text-muted-foreground">{patient.date_of_birth ? formatDate(patient.date_of_birth) : "—"}</td><td className="px-3 py-3 text-muted-foreground">{patient.gender || "—"}</td><td className="px-3 py-3 text-muted-foreground">{patient.phone || "—"}</td><td className="px-5 py-3 text-muted-foreground">{patient.email || "—"}</td></tr>)}</tbody></table>{patients.length === 0 && <EmptyMessage>No patient records are available in this clinic.</EmptyMessage>}</div><div className="border-t border-border bg-muted/30 px-5 py-3 text-xs text-muted-foreground">Patient registration and record editing are unavailable under the current database access rules.</div></article>;
+function PatientsContent({
+  patients,
+  canManage,
+  onAdd,
+  onEdit,
+}: {
+  patients: PatientRecord[];
+  canManage: boolean;
+  onAdd: () => void;
+  onEdit: (patient: PatientRecord) => void;
+}) {
+  return (
+    <article className="overflow-hidden border border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <h2 className="text-sm font-bold">Patient directory</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Only records visible to your clinic are shown.
+          </p>
+        </div>
+
+        {canManage && (
+          <Button onClick={onAdd} className="gap-2">
+            <Plus className="size-4" />
+            Add patient
+          </Button>
+        )}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-left">
+          <thead className="bg-muted/50">
+            <tr className="text-[10px] font-semibold uppercase text-muted-foreground">
+              <th className="px-5 py-3">Patient</th>
+              <th className="px-3 py-3">Date of birth</th>
+              <th className="px-3 py-3">Gender</th>
+              <th className="px-3 py-3">Phone</th>
+              <th className="px-3 py-3">Email</th>
+              {canManage && <th className="px-5 py-3 text-right">Action</th>}
+            </tr>
+          </thead>
+
+          <tbody>
+            {patients.map((patient) => (
+              <tr key={patient.id} className="border-t border-border text-xs">
+                <td className="px-5 py-3">
+                  <span className="flex items-center gap-2">
+                    <PersonAvatar name={patient.full_name} />
+                    {patient.full_name}
+                  </span>
+                </td>
+                <td className="px-3 py-3 text-muted-foreground">
+                  {patient.date_of_birth ? formatDate(patient.date_of_birth) : "—"}
+                </td>
+                <td className="px-3 py-3 text-muted-foreground">
+                  {patient.gender || "—"}
+                </td>
+                <td className="px-3 py-3 text-muted-foreground">
+                  {patient.phone || "—"}
+                </td>
+                <td className="px-3 py-3 text-muted-foreground">
+                  {patient.email || "—"}
+                </td>
+
+                {canManage && (
+                  <td className="px-5 py-3 text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(patient)}
+                    >
+                      Edit
+                    </Button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {patients.length === 0 && (
+          <EmptyMessage>No patient records are available in this clinic.</EmptyMessage>
+        )}
+      </div>
+    </article>
+  );
 }
 
 function TriageContent({ triage, patients, busy, onReview }: { triage: TriageRecord[]; patients: PatientRecord[]; busy: boolean; onReview: (item: TriageRecord) => void }) {
