@@ -372,3 +372,48 @@ export async function updateClinicDoctor(input: {
     throw new Error("This doctor could not be updated. Check clinic permissions.");
   }
 }
+
+
+export async function createClinicSchedule(input: {
+  clinicId: string;
+  doctorId: string;
+  values: {
+    day_of_week: string;
+    start_time: string;
+    end_time: string;
+    is_available: boolean;
+  };
+}) {
+  const { error } = await supabase.from("doctor_schedules").insert({
+    ...input.values,
+    clinic_id: input.clinicId,
+    doctor_id: input.doctorId,
+  });
+
+  if (error) {
+    throw new Error("The doctor schedule could not be added.");
+  }
+}
+
+export async function updateClinicSchedule(input: {
+  clinicId: string;
+  scheduleId: string;
+  values: {
+    day_of_week: string;
+    start_time: string;
+    end_time: string;
+    is_available: boolean;
+  };
+}) {
+  const { data, error } = await supabase
+    .from("doctor_schedules")
+    .update(input.values)
+    .eq("id", input.scheduleId)
+    .eq("clinic_id", input.clinicId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("The doctor schedule could not be updated.");
+  }
+}
