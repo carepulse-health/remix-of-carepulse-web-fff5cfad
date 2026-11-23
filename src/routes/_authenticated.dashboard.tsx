@@ -400,7 +400,14 @@ function LiveContent(props: {
 }) {
   if (props.section === "Overview") return <OverviewContent {...props} />;
   if (props.section === "Appointments") return <AppointmentsContent {...props} />;
-  if (props.section === "Patients") return <PatientsContent patients={props.patients} />;
+ if (props.section === "Patients") return (
+  <PatientsContent
+    patients={props.patients}
+    canManage={props.canManagePatients}
+    onAdd={props.onAddPatient}
+    onEdit={props.onEditPatient}
+  />
+);
   if (props.section === "Triage Queue") return <TriageContent triage={props.triage} patients={props.allPatients} busy={props.busy} onReview={props.onReviewTriage} />;
   if (props.section === "Doctors") return <DoctorsContent doctors={props.doctors} schedules={props.schedules} unavailable={props.unavailable} />;
   if (props.section === "Consultations") return <ConsultationsContent consultations={props.consultations} appointments={props.allAppointments} patients={props.allPatients} doctors={props.doctors} onCreate={props.onConsultation} />;
