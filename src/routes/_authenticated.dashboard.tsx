@@ -106,7 +106,13 @@ const [selectedDoctor, setSelectedDoctor] = useState<DoctorRecord | null>(null);
   const clinic = workspace.clinics.find((item) => item.id === selectedClinicId) ?? workspace.clinics[0] ?? null;
   const clinicId = clinic?.id ?? "";
   const canScan = !demoMode && canScanPasses(workspace.memberships.filter((item) => item.clinic_id === clinicId).map((item) => item.role));
-  const canManagePatientRecords = !demoMode && canManagePatients(
+const canManagePatientRecords = !demoMode && canManagePatients(
+  workspace.memberships
+    .filter((item) => item.clinic_id === clinicId)
+    .map((item) => item.role)
+);
+
+const canManageDoctorRecords = !demoMode && canManagePatients(
   workspace.memberships
     .filter((item) => item.clinic_id === clinicId)
     .map((item) => item.role)
