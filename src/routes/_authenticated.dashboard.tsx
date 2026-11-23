@@ -372,6 +372,17 @@ onEditPatient={(patient) => { setSelectedPatient(patient); setErrorMessage(""); 
       {!demoMode && clinic && <PassScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} clinicId={clinic.id} clinicName={clinic.name} onCheckedIn={(pass) => { setNotice(`${pass.patientName} was checked in from their QR pass.`); void reloadWorkspace(); }} />}
       <AppointmentDialog open={appointmentModal} onOpenChange={setAppointmentModal} patients={patients} doctors={doctors} busy={busy} onSubmit={saveAppointment} />
       <ConsultationDialog open={consultationModal} onOpenChange={setConsultationModal} patients={patients} doctors={doctors} appointments={appointments} selectedAppointment={selectedAppointment} busy={busy} onSubmit={saveConsultation} />
+  <PatientDialog
+  open={patientModal}
+  onOpenChange={(open) => {
+    setPatientModal(open);
+    if (!open) setSelectedPatient(null);
+  }}
+  busy={busy}
+  error={errorMessage}
+  patient={selectedPatient}
+  onSave={savePatient}
+/>
     </div>
   );
 }
