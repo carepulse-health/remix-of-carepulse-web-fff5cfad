@@ -197,6 +197,37 @@ async function savePatient(values: PatientFormValues) {
     setErrorMessage("Only clinic admins and reception staff can manage patient records.");
     return;
   }
+
+  setBusy(true);
+  setErrorMessage("");
+
+  try {
+    if (selectedPatient) {
+      await updateClinicPatient({
+        clinicId,
+        patientId: selectedPatient.id,
+        values,
+      });
+      setNotice("Patient details updated.");
+    } else {
+      await createClinicPatient({ clinicId, values });
+      setNotice("Patient registered.");
+    }
+
+    setPatientModal(false);
+    setSelectedPatient(null);
+    await reloadWorkspace();
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "The patient record could not be saved."
+    );
+  } finally {
+    setBusy(false);
+  }
+}
+
 async function saveDoctor(values: DoctorFormValues) {
   if (!clinicId || !canManageDoctorRecords) {
     setErrorMessage("You do not have permission to manage doctor records.");
@@ -232,34 +263,6 @@ async function saveDoctor(values: DoctorFormValues) {
     setBusy(false);
   }
 }
-  setBusy(true);
-  setErrorMessage("");
-
-  try {
-    if (selectedPatient) {
-      await updateClinicPatient({
-        clinicId,
-        patientId: selectedPatient.id,
-        values,
-      });
-      setNotice("Patient details updated.");
-    } else {
-      await createClinicPatient({ clinicId, values });
-      setNotice("Patient registered.");
-    }
-
-    setPatientModal(false);
-    setSelectedPatient(null);
-    await reloadWorkspace();
-  } catch (error) {
-    setErrorMessage(
-      error instanceof Error
-        ? error.message
-        : "The patient record could not be saved."
-    );
-  } finally {
-    setBusy(false);
-  }
 }
   async function updateAppointment(appointmentId: string, status: string) {
     setBusy(true);
