@@ -357,6 +357,9 @@ async function savePatient(values: PatientFormValues) {
             unavailable={workspace.unavailable}
             userId={user.id}
             busy={busy}
+   canManagePatients={canManagePatientRecords}
+onAddPatient={() => { setSelectedPatient(null); setErrorMessage(""); setPatientModal(true); }}
+onEditPatient={(patient) => { setSelectedPatient(patient); setErrorMessage(""); setPatientModal(true); }}                                                                                    
             onAppointmentStatus={updateAppointment}
             onReviewTriage={reviewTriage}
             onConsultation={() => { setSelectedAppointment(null); setConsultationModal(true); }}
