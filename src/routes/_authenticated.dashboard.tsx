@@ -94,6 +94,9 @@ const [consultationModal, setConsultationModal] = useState(false);
 const [selectedAppointment, setSelectedAppointment] = useState<AppointmentRecord | null>(null);
 const [patientModal, setPatientModal] = useState(false);
 const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
+
+const [doctorModal, setDoctorModal] = useState(false);
+const [selectedDoctor, setSelectedDoctor] = useState<DoctorRecord | null>(null);
   const [busy, setBusy] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [notice, setNotice] = useState("");
