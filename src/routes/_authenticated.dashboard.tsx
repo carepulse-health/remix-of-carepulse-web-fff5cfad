@@ -21,8 +21,10 @@ import {
   changeClinicAppointmentStatus,
   clinicWorkspaceQueryOptions,
   createClinicAppointment,
-  createClinicPatient,
-  updateClinicPatient,
+ createClinicPatient,
+updateClinicPatient,
+createClinicDoctor,
+updateClinicDoctor,
   markClinicNotificationRead,
   reviewClinicTriage,
   type AppointmentRecord,
@@ -35,6 +37,7 @@ import {
 } from "@/lib/carepulse-staff-data";
 
 import { PatientDialog } from "@/components/carepulse/patient-dialog";
+import { DoctorDialog, type DoctorFormValues } from "@/components/carepulse/doctor-dialog";
 import { canManagePatients } from "@/lib/carepulse-patients";
 import type { PatientFormValues } from "@/lib/carepulse-patients";
 import { supabase } from "@/integrations/supabase/client";
@@ -194,7 +197,41 @@ async function savePatient(values: PatientFormValues) {
     setErrorMessage("Only clinic admins and reception staff can manage patient records.");
     return;
   }
+async function saveDoctor(values: DoctorFormValues) {
+  if (!clinicId || !canManageDoctorRecords) {
+    setErrorMessage("You do not have permission to manage doctor records.");
+    return;
+  }
 
+  setBusy(true);
+  setErrorMessage("");
+
+  try {
+    if (selectedDoctor) {
+      await updateClinicDoctor({
+        clinicId,
+        doctorId: selectedDoctor.id,
+        values,
+      });
+      setNotice("Doctor details updated.");
+    } else {
+      await createClinicDoctor({ clinicId, values });
+      setNotice("Doctor added.");
+    }
+
+    setDoctorModal(false);
+    setSelectedDoctor(null);
+    await reloadWorkspace();
+  } catch (error) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "The doctor record could not be saved."
+    );
+  } finally {
+    setBusy(false);
+  }
+}
   setBusy(true);
   setErrorMessage("");
 
